@@ -4,6 +4,35 @@ import { extractResume } from './extract';
 import { deterministicTailor } from '@/lib/tailor/content';
 import { exportPdf } from '@/lib/tailor/export';
 import { profile, job } from '@/lib/tailor/fixtures';
+it('keeps standalone phone numbers after LinkedIn and website URLs separate', () => {
+  for (const phone of [
+    '5551234567',
+    '+15551234567',
+    '555-123-4567',
+    '555.123.4567',
+    '+1 (555) 123-4567',
+  ]) {
+    expect(
+      profileContacts(`https://www.linkedin.com/in/alex-morgan\n${phone}`),
+    ).toMatchObject({
+      linkedinUrl: 'https://www.linkedin.com/in/alex-morgan',
+      phone,
+    });
+    expect(
+      profileContacts(`https://alex.example.com/portfolio\n${phone}`),
+    ).toMatchObject({ website: 'https://alex.example.com/portfolio', phone });
+  }
+  expect(profileContacts('555.123.4567\nalex@example.com')).toMatchObject({
+    phone: '555.123.4567',
+    email: 'alex@example.com',
+  });
+});
+it('does not join contact fragments into invalid URLs or emails', () => {
+  expect(profileContacts('https://alex.example:\nabc.com').website).toBe(
+    'https://alex.example:',
+  );
+  expect(extractContact('alex@exam\nple..com').email).toBeNull();
+});
 it('repairs PDF-wrapped website and email domains before extracting contacts', () => {
   expect(
     profileContacts('https://alex.exam\nple.com\nalex@exam\nple.com'),

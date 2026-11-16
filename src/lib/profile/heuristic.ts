@@ -1,4 +1,4 @@
-import type { ProfileData } from './schema';
+import { profileSchema, type ProfileData } from './schema';
 import { normalizeEducation } from './education';
 const skills = [
   'JavaScript',
@@ -71,6 +71,29 @@ export function detectSkills(text: string) {
     ).test(text),
   );
 }
+function isPhone(value: string) {
+  const digits = value.replace(/\D/g, '').length;
+  return (
+    /^\+?\d[\d ().-]{7,}\d$/.test(value) &&
+    digits >= 10 &&
+    digits <= 15 &&
+    !/\b(?:19|20)\d{2}\s*[-.]\s*(?:19|20)\d{2}\b/.test(value)
+  );
+}
+function validContact(value: string, isUrl: boolean) {
+  return isUrl
+    ? profileSchema.shape.website.safeParse(
+        value.replace(/^www\./i, 'https://www.'),
+      ).success
+    : profileSchema.shape.email.safeParse(value).success;
+}
+function standaloneContact(value: string) {
+  return (
+    isPhone(value) ||
+    validContact(value, false) ||
+    (/^(?:https?:\/\/|www\.)/i.test(value) && validContact(value, true))
+  );
+}
 function unwrapContacts(text: string) {
   const boundary =
     /^(?:summary|profile|skills|experience|education|contact|certifications|projects|notes)$/i;
@@ -79,29 +102,38 @@ function unwrapContacts(text: string) {
     text = text.replace(
       /((?:https?:\/\/|www\.)[^\s<>()|]+|[A-Z0-9._%+-]+@[A-Z0-9.-]*)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._~:/?#=&%+-]+)[ \t]*(?:\r?$|[|]))/gim,
       (match, left: string, right: string) => {
-        if (boundary.test(right) || /^(?:https?:\/\/|www\.)/i.test(right))
+        if (
+          boundary.test(right) ||
+          standaloneContact(right) ||
+          /^(?:https?:\/\/|www\.)/i.test(right)
+        )
           return match;
         const isUrl = /^(?:https?:\/\/|www\.)/i.test(left);
         const continuation =
           /[.]/.test(right) ||
           /[.@/?#=&%-]$/.test(left) ||
-          /^[a-z0-9-]{1,3}$/.test(right) ||
+          /^[a-z-]{1,3}$/.test(right) ||
           (isUrl &&
             /\/[^/]+$/.test(left.replace(/^https?:\/\//i, '')) &&
-            /^[a-z0-9_-]+$/.test(right));
-        return continuation && (isUrl || /^[A-Z0-9.-]+$/i.test(right))
-          ? left
-          : match;
+            /^[a-z0-9_-]+$/.test(right) &&
+            /[a-z]/.test(right));
+        return continuation && validContact(left + right, isUrl) ? left : match;
       },
     );
     text = text.replace(
       /(^|[|][ \t]*)((?:email[ \t]*:[ \t]*)?[A-Z0-9._%+-]+)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._%+-]*@[A-Z0-9.-]+)[ \t]*(?:\r?$|[|]))/gim,
       (match, prefix: string, left: string, right: string) => {
         const local = left.replace(/^email\s*:\s*/i, '');
-        return right.startsWith('@') ||
-          /^email\s*:/i.test(left) ||
-          /[._%+-]/.test(local) ||
-          /^[a-z0-9]{1,3}$/.test(local)
+        if (
+          standaloneContact(left) ||
+          (standaloneContact(right) && !/^email\s*:/i.test(left))
+        )
+          return match;
+        return validContact(local + right, false) &&
+          (right.startsWith('@') ||
+            /^email\s*:/i.test(left) ||
+            /[._%+-]/.test(local) ||
+            /^[a-z0-9]{1,3}$/.test(local))
           ? prefix + left
           : match;
       },
@@ -113,14 +145,7 @@ function unwrapContacts(text: string) {
 export function extractContact(text: string) {
   const phone = [...text.matchAll(/\+?\d[\d ().-]{7,}\d/g)]
     .map((match) => match[0].trim())
-    .find((value) => {
-      const digits = value.replace(/\D/g, '').length;
-      return (
-        digits >= 10 &&
-        digits <= 15 &&
-        !/\b(?:19|20)\d{2}\s*[-.]\s*(?:19|20)\d{2}\b/.test(value)
-      );
-    });
+    .find(isPhone);
   return {
     email:
       unwrapContacts(text).match(
