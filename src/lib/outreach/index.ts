@@ -11,7 +11,8 @@ export function outreachDrafts(
   );
   const greeting = contact ? `Hi ${contact.firstName},` : 'Hello Hiring Team,';
   const skills = profile.skills.slice(0, 5).join(', ');
-  const body = `${greeting}\n\nI’m interested in the ${job.title} role at ${job.company}.${skills ? ` My profile includes ${skills}.` : ''}\n\n${contact ? 'Would you be comfortable sharing any advice about the team or considering a referral? No worries if not.' : 'Could you point me toward the right person to discuss this opportunity?'}\n\nThank you for your time,\n[Your name]`;
+  const name = profile.fullName?.trim();
+  const body = `${greeting}\n\nI’m interested in the ${job.title} role at ${job.company}.${skills ? ` My profile includes ${skills}.` : ''}\n\n${contact ? 'Would you be comfortable sharing any advice about the team or considering a referral? No worries if not.' : 'Could you point me toward the right person to discuss this opportunity?'}\n\nThank you for your time,\n${name || '[Your name]'}`;
   const note = `Hi ${contact?.firstName || 'there'}, I’m exploring the ${job.title} role at ${job.company}. I’d appreciate connecting and any advice you’re comfortable sharing. Thank you!`;
   const short =
     note.length <= 300
@@ -23,7 +24,9 @@ export function outreachDrafts(
           {
             channel: 'LINKEDIN' as const,
             subject: '',
-            body: short.slice(0, 300),
+            body: name
+              ? `${short.slice(0, 299 - name.length).trimEnd()}\n${name}`
+              : short.slice(0, 300),
             contactId: contact.id,
           },
         ]

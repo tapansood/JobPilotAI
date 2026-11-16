@@ -105,6 +105,7 @@ export function profileContacts(text: string) {
     }) || '';
   const website = links.find((value) => value !== linkedinUrl) || '';
   return {
+    fullName: resumeName(text),
     email: contact.email || '',
     phone: contact.phone || '',
     linkedinUrl,
@@ -113,6 +114,30 @@ export function profileContacts(text: string) {
       text.match(/^(?:location|based in|address)\s*:\s*(.+)$/im)?.[1]?.trim() ||
       '',
   };
+}
+function resumeName(text: string) {
+  const line =
+    text
+      .split(/\r?\n/)
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .find((value) => !/^(?:resume|curriculum vitae|cv)$/i.test(value)) || '';
+  const candidate = line
+    .replace(/^(?:full\s*)?name\s*:\s*/i, '')
+    .split(/\s+[|•]\s+/)[0]
+    .trim();
+  const words = candidate.split(/\s+/);
+  if (
+    words.length < 2 ||
+    words.length > 5 ||
+    candidate.length > 200 ||
+    !/^[\p{L}\p{M}][\p{L}\p{M}.'’ -]+$/u.test(candidate) ||
+    /\b(?:engineer|developer|architect|analyst|administrator|manager|scientist|specialist|consultant|summary|profile|skills|education|experience|professional|resume)\b/i.test(
+      candidate,
+    )
+  )
+    return '';
+  return candidate;
 }
 export function heuristicProfile(text: string): ProfileData {
   const lines = text

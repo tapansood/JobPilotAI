@@ -195,13 +195,14 @@ export default function ResumePage() {
           <fieldset disabled={busy} className="disabled:opacity-60">
             <h3 className="mb-3 font-semibold">Resume contact details</h3>
             <p className="mb-4 text-sm text-slate-500">
-              Used only in your resume exports, never to link or change sign-in
-              accounts. Review extracted details and regenerate tailored resumes
-              after updating.
+              Used in resume exports, cover letters and outreach drafts, never
+              to link or change sign-in accounts. Review extracted details and
+              regenerate tailored resumes after updating.
             </p>
             <div className="mb-6 grid gap-4 sm:grid-cols-2">
               {(
                 [
+                  'fullName',
                   'email',
                   'phone',
                   'linkedinUrl',
@@ -212,6 +213,7 @@ export default function ResumePage() {
                 <label key={key} className="text-sm font-semibold">
                   {
                     {
+                      fullName: 'Full name',
                       email: 'Email',
                       phone: 'Phone',
                       linkedinUrl: 'LinkedIn URL',
@@ -231,7 +233,11 @@ export default function ResumePage() {
                             : 'text'
                     }
                     maxLength={
-                      key === 'linkedinUrl' || key === 'website' ? 1000 : 500
+                      key === 'fullName'
+                        ? 200
+                        : key === 'linkedinUrl' || key === 'website'
+                          ? 1000
+                          : 500
                     }
                     value={profile[key] || ''}
                     onChange={(event) =>

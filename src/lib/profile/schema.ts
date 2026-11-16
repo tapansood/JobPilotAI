@@ -10,6 +10,7 @@ const contactUrl = z
   ])
   .optional();
 export const profileSchema = z.object({
+  fullName: z.string().trim().max(200).optional(),
   email: z.union([z.email(), z.literal('')]).optional(),
   phone: z.string().trim().max(100).optional(),
   linkedinUrl: contactUrl,

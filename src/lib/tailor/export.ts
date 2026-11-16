@@ -3,6 +3,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { TailoredContent } from './content';
 function lines(content: TailoredContent) {
   return [
+    ...(content.fullName?.trim() ? [content.fullName.trim()] : []),
     content.headline,
     [
       content.email,

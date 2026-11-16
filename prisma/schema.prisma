@@ -190,6 +190,7 @@ model Resume {
   @@index([userId])
 }
 model Profile {
+  fullName String @default("")
   email String @default("")
   phone String @default("")
   linkedinUrl String @default("")

@@ -183,5 +183,5 @@ export function validateTailored(
 }
 export function coverTemplate(profile: ProfileData, job: TailorJob) {
   const relevant = deterministicTailor(profile, job).skills;
-  return `Dear Hiring Team,\n\nI am interested in the ${job.title} role at ${job.company}.\n\n${profile.summary}${relevant.length ? `\n\nMy profile includes these skills: ${relevant.join(', ')}.` : ''}\n\nI would welcome the opportunity to discuss how my experience could support your team. Thank you for considering my application.\n\nBest regards,\n[Your name]`;
+  return `Dear Hiring Team,\n\nI am interested in the ${job.title} role at ${job.company}.\n\n${profile.summary}${relevant.length ? `\n\nMy profile includes these skills: ${relevant.join(', ')}.` : ''}\n\nI would welcome the opportunity to discuss how my experience could support your team. Thank you for considering my application.\n\nBest regards,\n${profile.fullName?.trim() || '[Your name]'}`;
 }
