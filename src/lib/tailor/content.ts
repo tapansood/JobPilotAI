@@ -16,11 +16,14 @@ export function optionsFor(profile: ProfileData, job: TailorJob) {
   const relevant = profile.skills.filter((skill) =>
     keywords.some((key) => norm(key) === norm(skill)),
   );
+  const baseSummary = profile.summary
+    .replace(/\bRelevant skills:[^\n]*?(?:[.!?](?=\s|$)|(?=\n|$))/gi, '')
+    .trim();
   const summary = [
-    profile.summary,
+    baseSummary,
     ...(relevant.length
       ? [
-          `${profile.summary}${profile.summary ? '\n\n' : ''}Relevant skills: ${relevant.join(', ')}.`,
+          `${baseSummary}${baseSummary ? '\n\n' : ''}Relevant skills: ${relevant.join(', ')}.`,
         ]
       : []),
   ].filter((value) => value.length <= 6000);
