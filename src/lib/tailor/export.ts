@@ -1,6 +1,7 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { TailoredContent } from './content';
+import { educationLine } from '@/lib/profile/education';
 function lines(content: TailoredContent) {
   return [
     ...(content.fullName?.trim() ? [content.fullName.trim()] : []),
@@ -29,9 +30,7 @@ function lines(content: TailoredContent) {
       '',
     ]),
     'EDUCATION',
-    ...content.education.map((entry) =>
-      [entry.institution, entry.degree, entry.year].filter(Boolean).join(' | '),
-    ),
+    ...content.education.map(educationLine),
   ].flatMap((line) => line.split('\n'));
 }
 export async function exportDocx(content: TailoredContent) {

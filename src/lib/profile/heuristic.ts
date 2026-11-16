@@ -1,4 +1,5 @@
 import type { ProfileData } from './schema';
+import { normalizeEducation } from './education';
 const skills = [
   'JavaScript',
   'TypeScript',
@@ -259,11 +260,13 @@ export function heuristicProfile(text: string): ProfileData {
       }
     }
     if (section === 'education')
-      result.education.push({
-        institution: line,
-        degree: '',
-        year: line.match(/\b(?:19|20)\d{2}\b/)?.[0] || '',
-      });
+      result.education.push(
+        normalizeEducation({
+          institution: line,
+          degree: '',
+          year: line.match(/\b(?:19|20)\d{2}\b/)?.[0] || '',
+        }),
+      );
   }
   const contact = extractContact(text);
   result.summary =
