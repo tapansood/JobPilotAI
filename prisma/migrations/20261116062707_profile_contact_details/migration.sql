@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Profile" ADD COLUMN     "email" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "linkedinUrl" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "location" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "phone" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "website" TEXT NOT NULL DEFAULT '';

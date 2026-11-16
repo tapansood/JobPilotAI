@@ -1,0 +1,174 @@
+import { expect, it } from 'vitest';
+import { extractContact, profileContacts } from './heuristic';
+import { extractResume } from './extract';
+import { deterministicTailor } from '@/lib/tailor/content';
+import { exportPdf } from '@/lib/tailor/export';
+import { profile, job } from '@/lib/tailor/fixtures';
+it.each([' | Email: ', ' · E-mail: ', ', EMAIL: ', ' / e-MAIL: '])(
+  'recognizes an inline trailing email label: %s',
+  (label) => {
+    expect(
+      profileContacts(`Phone: 415-555-2671${label}alex\n@example.com`),
+    ).toMatchObject({ phone: '415-555-2671', email: 'alex@example.com' });
+  },
+);
+it('does not apply an email label to name or prose tokens that follow it', () => {
+  expect(
+    extractContact('Email: display name Smith-Jones\nalex@example.com').email,
+  ).toBe('alex@example.com');
+});
+it.each(['Pilot', 'iPhone', 'A'])(
+  'continues mixed-case URL path pieces: %s',
+  (piece) => {
+    expect(
+      profileContacts(`https://github.com/alex/Job\n${piece}`).website,
+    ).toBe(`https://github.com/alex/Job${piece}`);
+  },
+);
+it.each([
+  'Experience',
+  'objective',
+  'employment',
+  'employment history',
+  'technical skills',
+  'Professional Experience',
+  'Contact',
+  'PROFESSIONAL SUMMARY',
+])('keeps the resume section %s separate from URLs', (heading) => {
+  expect(
+    profileContacts(`https://github.com/alex/Job\n${heading}`).website,
+  ).toBe('https://github.com/alex/Job');
+});
+it('does not absorb a name or prose suffix into a standalone email', () => {
+  expect(profileContacts('Alex Smith-Jones\nalex@example.com')).toMatchObject({
+    fullName: 'Alex Smith-Jones',
+    email: 'alex@example.com',
+  });
+  expect(extractContact('Details: alex.ex\nample@example.com').email).toBe(
+    'ample@example.com',
+  );
+  expect(extractContact('Details: alex.\nample@example.com').email).toBe(
+    'ample@example.com',
+  );
+  expect(extractContact('Details: alex@\nexample\n.com').email).toBe(
+    'alex@example.com',
+  );
+});
+it.each([
+  'EXPERIENCE:',
+  'OVERVIEW',
+  'Education:',
+  'Employment',
+  'WORK_HISTORY',
+])('does not absorb the heading %s into a URL', (heading) => {
+  expect(
+    profileContacts(`https://www.linkedin.com/in/alex-morgan\n${heading}`)
+      .linkedinUrl,
+  ).toBe('https://www.linkedin.com/in/alex-morgan');
+});
+it('keeps lowercase slug and path continuations working', () => {
+  expect(
+    profileContacts('https://alex.example.com/port\nfolio/projects').website,
+  ).toBe('https://alex.example.com/portfolio/projects');
+});
+it.each([
+  {
+    input: 'alex.ex\nample@example.com',
+    expected: { email: 'alex.example@example.com' },
+  },
+  {
+    input: 'https://www.linkedin.com/in/alex-morgan-12\n345',
+    expected: { linkedinUrl: 'https://www.linkedin.com/in/alex-morgan-12345' },
+  },
+  { input: 'alex@\nexample\n.com', expected: { email: 'alex@example.com' } },
+])('accumulates wrapped contact fragments: $input', ({ input, expected }) => {
+  expect(profileContacts(input)).toMatchObject(expected);
+});
+it('keeps standalone phone numbers after LinkedIn and website URLs separate', () => {
+  for (const phone of [
+    '5551234567',
+    '+15551234567',
+    '555-123-4567',
+    '555.123.4567',
+    '+1 (555) 123-4567',
+  ]) {
+    expect(
+      profileContacts(`https://www.linkedin.com/in/alex-morgan\n${phone}`),
+    ).toMatchObject({
+      linkedinUrl: 'https://www.linkedin.com/in/alex-morgan',
+      phone,
+    });
+    expect(
+      profileContacts(`https://alex.example.com/portfolio\n${phone}`),
+    ).toMatchObject({ website: 'https://alex.example.com/portfolio', phone });
+  }
+  expect(profileContacts('555.123.4567\nalex@example.com')).toMatchObject({
+    phone: '555.123.4567',
+    email: 'alex@example.com',
+  });
+});
+it('does not join contact fragments into invalid URLs or emails', () => {
+  expect(profileContacts('https://alex.example:\nabc.com').website).toBe(
+    'https://alex.example:',
+  );
+  expect(extractContact('alex@exam\nple..com').email).toBeNull();
+});
+it('repairs PDF-wrapped website and email domains before extracting contacts', () => {
+  expect(
+    profileContacts('https://alex.exam\nple.com\nalex@exam\nple.com'),
+  ).toMatchObject({
+    website: 'https://alex.example.com',
+    email: 'alex@example.com',
+  });
+  expect(extractContact('alex@exam\r\n  ple.com').email).toBe(
+    'alex@example.com',
+  );
+  expect(profileContacts('www.alex.\nexample.com')).toMatchObject({
+    website: 'https://www.alex.example.com',
+  });
+  expect(extractContact('Email: alex\n@example.com').email).toBe(
+    'alex@example.com',
+  );
+  expect(extractContact('Email: alex.ex\nample@example.com').email).toBe(
+    'alex.example@example.com',
+  );
+});
+it('preserves adjacent contact fields and headings instead of joining them', () => {
+  const result = profileContacts(
+    'Alex Morgan\nalex@example.com\nhttps://alex.example.com\nSUMMARY\nSoftware engineer\nSKILLS\nReact',
+  );
+  expect(result).toMatchObject({
+    email: 'alex@example.com',
+    website: 'https://alex.example.com',
+  });
+  expect(
+    profileContacts('https://alex.example.com\nalex@example.com'),
+  ).toMatchObject({
+    website: 'https://alex.example.com',
+    email: 'alex@example.com',
+  });
+  expect(profileContacts('')).toMatchObject({ website: '', email: '' });
+  expect(profileContacts('not an email\njavascript:alert(1)')).toMatchObject({
+    website: '',
+    email: '',
+  });
+});
+it('recovers a website that wraps in an actual exported PDF contact header', async () => {
+  const content = deterministicTailor(
+    {
+      ...profile,
+      email: 'alex.morgan@example.com',
+      phone: '+1 (415) 555-2671',
+      linkedinUrl: 'https://www.linkedin.com/in/alex-morgan',
+      website: 'https://alex.example.com',
+      location: 'Seattle, WA',
+    },
+    job,
+  );
+  const { rawText } = await extractResume(
+    await exportPdf(content),
+    'resume.pdf',
+  );
+  expect(rawText).not.toContain('https://alex.example.com');
+  expect(profileContacts(rawText).website).toBe('https://alex.example.com');
+});
