@@ -4,7 +4,7 @@ const normalize = (value: string) =>
   value
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^a-z0-9+#.]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
 export const fingerprint = (
