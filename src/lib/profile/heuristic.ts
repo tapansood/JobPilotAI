@@ -113,7 +113,7 @@ function unwrapContacts(text: string) {
       text.lastIndexOf('\n', match.index - 1) + 1,
       match.index,
     );
-    const emailLabel = /^[ \t]*email[ \t]*:[ \t]*$/i.test(beforeToken);
+    const emailLabel = /\be-?mail[ \t]*:[ \t]*$/i.test(beforeToken);
     const wholeEmailLine = !beforeToken.trim() || emailLabel;
     const clearEmailPrefix = token.includes('@') || /[._@-]$/.test(token);
     const localPrefix =

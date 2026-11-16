@@ -4,6 +4,19 @@ import { extractResume } from './extract';
 import { deterministicTailor } from '@/lib/tailor/content';
 import { exportPdf } from '@/lib/tailor/export';
 import { profile, job } from '@/lib/tailor/fixtures';
+it.each([' | Email: ', ' · E-mail: ', ', EMAIL: ', ' / e-MAIL: '])(
+  'recognizes an inline trailing email label: %s',
+  (label) => {
+    expect(
+      profileContacts(`Phone: 415-555-2671${label}alex\n@example.com`),
+    ).toMatchObject({ phone: '415-555-2671', email: 'alex@example.com' });
+  },
+);
+it('does not apply an email label to name or prose tokens that follow it', () => {
+  expect(
+    extractContact('Email: display name Smith-Jones\nalex@example.com').email,
+  ).toBe('alex@example.com');
+});
 it.each(['Pilot', 'iPhone', 'A'])(
   'continues mixed-case URL path pieces: %s',
   (piece) => {
