@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { TailoredContent } from '@/lib/tailor/content';
+import { draftFor, applyDraft, type TextDraft } from '@/lib/tailor/draft';
 type Contact = {
   id: string;
   firstName: string;
@@ -21,6 +22,10 @@ type Draft = {
 type Tailored = { id: string; content: TailoredContent };
 export default function Preparation({ jobId }: { jobId: string }) {
   const [tailored, setTailored] = useState<Tailored | null>(null);
+  const [textDraft, setTextDraft] = useState<TextDraft>({
+    skills: '',
+    bullets: [],
+  });
   const [cover, setCover] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -33,6 +38,7 @@ export default function Preparation({ jobId }: { jobId: string }) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
         setTailored(data.tailored);
+        if (data.tailored) setTextDraft(draftFor(data.tailored.content));
         setCover(data.coverLetter?.body || '');
         setContacts(data.contacts);
         setDrafts(data.drafts);
@@ -49,7 +55,10 @@ export default function Preparation({ jobId }: { jobId: string }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      if (kind === 'tailor') setTailored(data.tailored);
+      if (kind === 'tailor') {
+        setTailored(data.tailored);
+        setTextDraft(draftFor(data.tailored.content));
+      }
       if (kind === 'cover-letter') setCover(data.coverLetter.body);
       if (kind === 'outreach') {
         setContacts(data.contacts);
@@ -72,11 +81,12 @@ export default function Preparation({ jobId }: { jobId: string }) {
       const response = await fetch(`/api/tailored/${tailored.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tailored.content),
+        body: JSON.stringify(applyDraft(tailored.content, textDraft)),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setTailored(data.tailored);
+      setTextDraft(draftFor(data.tailored.content));
       setMessage('Tailored resume saved. Downloads use the saved version.');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unable to save.');
@@ -178,14 +188,14 @@ export default function Preparation({ jobId }: { jobId: string }) {
               Skills (comma-separated)
               <input
                 className="input"
-                value={tailored.content.skills.join(', ')}
-                onChange={(event) =>
+                value={textDraft.skills}
+                onBlur={() =>
                   edit({
-                    skills: event.target.value
-                      .split(',')
-                      .map((skill) => skill.trim())
-                      .filter(Boolean),
+                    skills: applyDraft(tailored.content, textDraft).skills,
                   })
+                }
+                onChange={(event) =>
+                  setTextDraft({ ...textDraft, skills: event.target.value })
                 }
               />
             </label>
@@ -195,18 +205,18 @@ export default function Preparation({ jobId }: { jobId: string }) {
                 <textarea
                   className="input min-h-28 font-normal"
                   aria-label={`Bullets for ${entry.company}`}
-                  value={entry.bullets.join('\n')}
-                  onChange={(event) =>
+                  value={textDraft.bullets[index] ?? ''}
+                  onBlur={() =>
                     edit({
-                      experience: tailored.content.experience.map((item, i) =>
-                        i === index
-                          ? {
-                              ...item,
-                              bullets: event.target.value
-                                .split('\n')
-                                .filter(Boolean),
-                            }
-                          : item,
+                      experience: applyDraft(tailored.content, textDraft)
+                        .experience,
+                    })
+                  }
+                  onChange={(event) =>
+                    setTextDraft({
+                      ...textDraft,
+                      bullets: textDraft.bullets.map((value, i) =>
+                        i === index ? event.target.value : value,
                       ),
                     })
                   }
