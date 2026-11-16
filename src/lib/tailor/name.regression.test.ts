@@ -47,17 +47,15 @@ it('accepts an AI-extracted name and fills blank AI names from the top line', as
   };
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockImplementation(() =>
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
-              choices: [{ message: { content: JSON.stringify(proposal) } }],
-            }),
-          ),
+    vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(proposal) } }],
+          }),
         ),
       ),
+    ),
   );
   expect(await parseProfile(sampleResume)).toMatchObject({
     fullName: 'Alex J. Morgan',
