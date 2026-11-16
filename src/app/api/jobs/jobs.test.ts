@@ -51,17 +51,43 @@ it('scopes searches and reports missing profile or invalid input', async () => {
   expect((await POST(request({ page: -1 }))).status).toBe(400);
 });
 it('scopes filtered reads and rejects invalid filters', async () => {
+  const job = {
+    company: 'Acme',
+    title: 'Engineer',
+    location: 'Remote',
+    source: 'mock',
+    remote: true,
+  };
+  const saved = { id: 'saved', score: 75, status: 'SAVED', job };
+  m.find.mockResolvedValue([
+    saved,
+    {
+      id: 'duplicate',
+      score: 70,
+      status: null,
+      job: { ...job, source: 'other' },
+    },
+    {
+      id: 'onsite',
+      score: 90,
+      status: 'SAVED',
+      job: { ...job, title: 'Developer', remote: false },
+    },
+    {
+      id: 'low',
+      score: 10,
+      status: 'SAVED',
+      job: { ...job, title: 'Analyst' },
+    },
+  ]);
   const response = await GET(
     new Request(
       'http://localhost:3000/api/jobs?minScore=50&remote=true&saved=true&source=mock',
     ),
   );
-  expect(await response.json()).toEqual({ matches: [] });
+  expect(await response.json()).toEqual({ matches: [saved] });
   expect(m.find.mock.calls[0][0].where).toMatchObject({
     userId: 'owner',
-    score: { gte: 50 },
-    status: 'SAVED',
-    job: { source: 'mock', remote: true },
   });
   expect(
     (await GET(new Request('http://localhost:3000/api/jobs?minScore=101')))
@@ -69,6 +95,11 @@ it('scopes filtered reads and rejects invalid filters', async () => {
   ).toBe(400);
 });
 it('updates only owned matches and handles missing records/invalid status', async () => {
+  const job = { company: 'Acme', title: 'Engineer', location: 'Remote' };
+  m.find.mockResolvedValue([
+    { jobId: 'job', job },
+    { jobId: 'duplicate', job },
+  ]);
   m.update.mockResolvedValue({ count: 1 });
   expect(
     (
@@ -78,7 +109,7 @@ it('updates only owned matches and handles missing records/invalid status', asyn
     ).status,
   ).toBe(200);
   expect(m.update).toHaveBeenCalledWith({
-    where: { userId: 'owner', jobId: 'job' },
+    where: { userId: 'owner', jobId: { in: ['job', 'duplicate'] } },
     data: { status: 'SAVED' },
   });
   m.update.mockResolvedValue({ count: 0 });
