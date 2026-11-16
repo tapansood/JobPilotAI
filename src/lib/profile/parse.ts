@@ -14,8 +14,10 @@ export async function parseProfile(rawText: string) {
     prompt: rawText,
     json: true,
   });
-  return profileSchema.parse({
-    ...JSON.parse(result),
-    ...profileContacts(rawText),
-  });
+  const profile = profileSchema.parse(JSON.parse(result));
+  const contacts = profileContacts(rawText);
+  for (const key of Object.keys(contacts) as (keyof typeof contacts)[]) {
+    if (profile[key]?.trim()) contacts[key] = profile[key]!;
+  }
+  return profileSchema.parse({ ...profile, ...contacts });
 }
