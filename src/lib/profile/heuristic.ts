@@ -1,5 +1,7 @@
 import { profileSchema, type ProfileData } from './schema';
 import { normalizeEducation } from './education';
+const sectionHeading =
+  /^(?:summary|professional summary|profile|objective|experience|work experience|professional experience|employment|employment history|education|skills|technical skills|certifications|projects|contact|locations?)$/i;
 const skills = [
   'JavaScript',
   'TypeScript',
@@ -94,8 +96,8 @@ function phoneFragment(value: string) {
   );
 }
 function unwrapContacts(text: string) {
-  const boundary =
-    /^(?:summary|profile|skills|experience|education|contact|certifications|projects|notes)$/i;
+  const boundary = (value: string) =>
+    sectionHeading.test(value.replace(/:$/, '')) || /^notes:?$/i.test(value);
   const starts =
     /(?:https?:\/\/|www\.)[^\s<>()|]*|[A-Z0-9._%+-]+(?:@[A-Z0-9.-]*)?/gi;
   let output = '';
@@ -106,7 +108,7 @@ function unwrapContacts(text: string) {
     let end = starts.lastIndex;
     const originalEnd = end;
     const isUrl = /^(?:https?:\/\/|www\.)/i.test(token);
-    if (phoneFragment(token) || boundary.test(token)) continue;
+    if (phoneFragment(token) || boundary(token)) continue;
     const beforeToken = text.slice(
       text.lastIndexOf('\n', match.index - 1) + 1,
       match.index,
@@ -129,7 +131,7 @@ function unwrapContacts(text: string) {
       if (!next) break;
       const fragment = next[1];
       if (
-        boundary.test(fragment) ||
+        boundary(fragment) ||
         phoneFragment(fragment) ||
         /^(?:https?:\/\/|www\.)/i.test(fragment)
       )
@@ -139,7 +141,7 @@ function unwrapContacts(text: string) {
         if (
           fragment.includes('@') ||
           fragment.endsWith(':') ||
-          /^[A-Z][A-Za-z0-9_-]*$/.test(fragment) ||
+          /^(?=(?:[^A-Z]*[A-Z]){2})[A-Z0-9_-]+$/.test(fragment) ||
           !validContact(combined, true)
         )
           break;
@@ -270,11 +272,7 @@ export function heuristicProfile(text: string): ProfileData {
   const summary: string[] = [];
   for (const line of lines) {
     const header = line.replace(/:$/, '').toLowerCase();
-    if (
-      /^(summary|professional summary|profile|objective|experience|work experience|professional experience|employment|education|skills|technical skills|certifications|projects|contact|locations?)$/.test(
-        header,
-      )
-    ) {
+    if (sectionHeading.test(header)) {
       section = header;
       continue;
     }

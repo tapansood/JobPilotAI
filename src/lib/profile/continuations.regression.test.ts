@@ -4,6 +4,28 @@ import { extractResume } from './extract';
 import { deterministicTailor } from '@/lib/tailor/content';
 import { exportPdf } from '@/lib/tailor/export';
 import { profile, job } from '@/lib/tailor/fixtures';
+it.each(['Pilot', 'iPhone', 'A'])(
+  'continues mixed-case URL path pieces: %s',
+  (piece) => {
+    expect(
+      profileContacts(`https://github.com/alex/Job\n${piece}`).website,
+    ).toBe(`https://github.com/alex/Job${piece}`);
+  },
+);
+it.each([
+  'Experience',
+  'objective',
+  'employment',
+  'employment history',
+  'technical skills',
+  'Professional Experience',
+  'Contact',
+  'PROFESSIONAL SUMMARY',
+])('keeps the resume section %s separate from URLs', (heading) => {
+  expect(
+    profileContacts(`https://github.com/alex/Job\n${heading}`).website,
+  ).toBe('https://github.com/alex/Job');
+});
 it('does not absorb a name or prose suffix into a standalone email', () => {
   expect(profileContacts('Alex Smith-Jones\nalex@example.com')).toMatchObject({
     fullName: 'Alex Smith-Jones',
