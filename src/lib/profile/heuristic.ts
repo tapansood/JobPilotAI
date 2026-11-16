@@ -87,60 +87,77 @@ function validContact(value: string, isUrl: boolean) {
       ).success
     : profileSchema.shape.email.safeParse(value).success;
 }
-function standaloneContact(value: string) {
+function phoneFragment(value: string) {
+  const digits = value.replace(/\D/g, '').length;
   return (
-    isPhone(value) ||
-    validContact(value, false) ||
-    (/^(?:https?:\/\/|www\.)/i.test(value) && validContact(value, true))
+    /^\+?\d[\d ().-]*$/.test(value) && (digits >= 7 || /[+(). -]/.test(value))
   );
 }
 function unwrapContacts(text: string) {
   const boundary =
     /^(?:summary|profile|skills|experience|education|contact|certifications|projects|notes)$/i;
-  for (let pass = 0; pass < 10; pass++) {
-    const previous = text;
-    text = text.replace(
-      /((?:https?:\/\/|www\.)[^\s<>()|]+|[A-Z0-9._%+-]+@[A-Z0-9.-]*)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._~:/?#=&%+-]+)[ \t]*(?:\r?$|[|]))/gim,
-      (match, left: string, right: string) => {
-        if (
-          boundary.test(right) ||
-          standaloneContact(right) ||
-          /^(?:https?:\/\/|www\.)/i.test(right)
-        )
-          return match;
-        const isUrl = /^(?:https?:\/\/|www\.)/i.test(left);
-        const continuation =
-          /[.]/.test(right) ||
-          /[.@/?#=&%-]$/.test(left) ||
-          /^[a-z-]{1,3}$/.test(right) ||
-          (isUrl &&
-            /\/[^/]+$/.test(left.replace(/^https?:\/\//i, '')) &&
-            /^[a-z0-9_-]+$/.test(right) &&
-            /[a-z]/.test(right));
-        return continuation && validContact(left + right, isUrl) ? left : match;
-      },
+  const starts =
+    /(?:https?:\/\/|www\.)[^\s<>()|]*|[A-Z0-9._%+-]+(?:@[A-Z0-9.-]*)?/gi;
+  let output = '';
+  let copied = 0;
+  let match: RegExpExecArray | null;
+  while ((match = starts.exec(text))) {
+    let token = match[0];
+    let end = starts.lastIndex;
+    const originalEnd = end;
+    const isUrl = /^(?:https?:\/\/|www\.)/i.test(token);
+    if (phoneFragment(token) || boundary.test(token)) continue;
+    const emailLabel = /\bemail[ \t]*:[ \t]*$/i.test(
+      text.slice(text.lastIndexOf('\n', match.index - 1) + 1, match.index),
     );
-    text = text.replace(
-      /(^|[|][ \t]*)((?:email[ \t]*:[ \t]*)?[A-Z0-9._%+-]+)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._%+-]*@[A-Z0-9.-]+)[ \t]*(?:\r?$|[|]))/gim,
-      (match, prefix: string, left: string, right: string) => {
-        const local = left.replace(/^email\s*:\s*/i, '');
+    const localPrefix =
+      token.includes('@') ||
+      /[._%+-]/.test(token) ||
+      /^[a-z0-9]{1,3}$/.test(token) ||
+      emailLabel;
+    while (token.length <= 1000) {
+      const next = text
+        .slice(end)
+        .match(
+          /^[ \t]*\r?\n[ \t]*([A-Z0-9._~:/?#=&%+@-]{1,100})(?=[ \t]*(?:\r?\n|$|[|]))/i,
+        );
+      if (!next) break;
+      const fragment = next[1];
+      if (
+        boundary.test(fragment) ||
+        phoneFragment(fragment) ||
+        /^(?:https?:\/\/|www\.)/i.test(fragment)
+      )
+        break;
+      const combined = token + fragment;
+      if (isUrl) {
+        if (fragment.includes('@') || !validContact(combined, true)) break;
+      } else {
+        const midEmail =
+          !validContact(token, false) ||
+          /[.-]$/.test(token) ||
+          /[.@]/.test(fragment) ||
+          /^[a-z]{1,3}$/.test(fragment);
         if (
-          standaloneContact(left) ||
-          (standaloneContact(right) && !/^email\s*:/i.test(left))
+          !localPrefix ||
+          !midEmail ||
+          (token.includes('@') && fragment.includes('@')) ||
+          !/^[A-Z0-9_%+-][A-Z0-9._%+-]*(?:@[A-Z0-9.-]*)?$/i.test(combined) ||
+          combined.includes('..') ||
+          combined.includes('@.')
         )
-          return match;
-        return validContact(local + right, false) &&
-          (right.startsWith('@') ||
-            /^email\s*:/i.test(left) ||
-            /[._%+-]/.test(local) ||
-            /^[a-z0-9]{1,3}$/.test(local))
-          ? prefix + left
-          : match;
-      },
-    );
-    if (text === previous) break;
+          break;
+      }
+      token = combined;
+      end += next[0].length;
+    }
+    if (end !== originalEnd && validContact(token, isUrl)) {
+      output += text.slice(copied, match.index) + token;
+      copied = end;
+      starts.lastIndex = end;
+    }
   }
-  return text;
+  return output + text.slice(copied);
 }
 export function extractContact(text: string) {
   const phone = [...text.matchAll(/\+?\d[\d ().-]{7,}\d/g)]

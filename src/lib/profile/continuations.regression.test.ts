@@ -4,6 +4,19 @@ import { extractResume } from './extract';
 import { deterministicTailor } from '@/lib/tailor/content';
 import { exportPdf } from '@/lib/tailor/export';
 import { profile, job } from '@/lib/tailor/fixtures';
+it.each([
+  {
+    input: 'alex.ex\nample@example.com',
+    expected: { email: 'alex.example@example.com' },
+  },
+  {
+    input: 'https://www.linkedin.com/in/alex-morgan-12\n345',
+    expected: { linkedinUrl: 'https://www.linkedin.com/in/alex-morgan-12345' },
+  },
+  { input: 'alex@\nexample\n.com', expected: { email: 'alex@example.com' } },
+])('accumulates wrapped contact fragments: $input', ({ input, expected }) => {
+  expect(profileContacts(input)).toMatchObject(expected);
+});
 it('keeps standalone phone numbers after LinkedIn and website URLs separate', () => {
   for (const phone of [
     '5551234567',
