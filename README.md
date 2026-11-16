@@ -18,7 +18,11 @@ Open http://localhost:3000. Sign in with email or an E.164 phone number (e.g. +1
 
 ## Current scope
 
-Landing page, email magic-link and phone OTP authentication, persistent sessions, and a protected dashboard shell. Resume, Jobs, Applications, Contacts, and Settings are clearly labeled placeholders, not implemented features. Email and phone identities are separate accounts for now.
+Landing page, email magic-link and phone OTP authentication, persistent sessions, and a protected dashboard. `/dashboard/resume` accepts PDF/DOCX resumes (5 MB maximum), extracts text, builds a profile, and lets you edit the headline, summary, skills, titles, locations, seniority, and years of experience. Jobs, Applications, Contacts, and Settings remain placeholders. Email and phone identities are separate accounts for now.
+
+Files are signature-checked, with bounded DOCX archive expansion, then parsed using pdf-parse and Mammoth. Scanned/image-only and password-protected documents are unsupported. Uploading replaces the primary resume and parsed profile, including manual edits; previous uploads remain private on disk. Resume files live in `./uploads` (gitignored and never served publicly). The `FileStorage` interface supports replacing local disk with S3 later. Containers need a persistent writable `/app/uploads` mount owned by the app user. Local storage is not suitable for multi-instance deployment.
+
+Without AI credentials, the mock provider uses deterministic section/skill/title/year heuristics. It extracts contact details internally without adding them to the profile or linking accounts. Heuristics are best-effort, not a substitute for review; unknown experience years remain blank. Real providers receive resume text, so configure them only with user consent. Parsed output is validated with Zod before persistence. `GET/PUT /api/profile` and multipart `POST /api/resume` are session-scoped; clients cannot choose a user ID.
 
 ## Configuration
 
@@ -38,7 +42,7 @@ Keep `.env` private. Production requires HTTPS, a correct `APP_URL`, real email/
 
 Next.js App Router + strict TypeScript + Tailwind. `src/app/api` contains backend route handlers; `src/lib/db.ts` owns Prisma; `src/lib/auth` handles delivery, token hashing, and transactional verification. Postgres 16 stores users, verification challenges, and sessions. Email tokens expire after 15 minutes, SMS codes after 10 minutes and at most five verification attempts. Issuing a new challenge invalidates previous challenges. Sends are limited to one per minute and five per hour per identifier using database transactions. Sessions expire after 30 days and are stored hashed; cookies are httpOnly and SameSite=Lax. Middleware rejects missing cookies and the dashboard server layout validates the actual database session. POST origin validation rejects cross-site browser requests.
 
-`src/lib/ai` exposes `AIProvider.complete({system, prompt, json?})` with mock/OpenAI/Anthropic fetch adapters; it is not yet connected to user features. Planned modules include resume/profile parsing, job feeds, tailoring, outreach drafts, and application tracking. AI output will require user review; no automatic applications or messages.
+`src/lib/ai` exposes `AIProvider.complete({system, prompt, json?})` with mock/OpenAI/Anthropic fetch adapters, used by `src/lib/profile/parse.ts` for schema-validated resume parsing. Planned modules include job feeds, tailoring, outreach drafts, and application tracking. AI output requires user review; no automatic applications or messages.
 
 LinkedIn integration will use official user data exports and user-reviewed drafts, **not scraping, password collection, or automated messaging**.
 

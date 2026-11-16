@@ -67,7 +67,7 @@ export default function Home() {
           [
             '01 / EXPERIENCE',
             'Start with your story',
-            'Planned: upload your resume once and build a profile that represents what you bring.',
+            'Upload your resume and build an editable profile that represents what you bring.',
           ],
           [
             '02 / OPPORTUNITY',

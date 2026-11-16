@@ -1,3 +1,4 @@
+import { heuristicProfile } from '@/lib/profile/heuristic';
 export interface CompletionRequest {
   system: string;
   prompt: string;
@@ -7,7 +8,9 @@ export interface AIProvider {
   complete(request: CompletionRequest): Promise<string>;
 }
 export const mockProvider: AIProvider = {
-  async complete({ prompt, json }) {
+  async complete({ system, prompt, json }) {
+    if (system.startsWith('JOBPILOT_PROFILE_V1:'))
+      return JSON.stringify(heuristicProfile(prompt));
     return json
       ? JSON.stringify({ mock: true, text: prompt })
       : `[Mock AI — configure a provider for real suggestions]\n${prompt}`;

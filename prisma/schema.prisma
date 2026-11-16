@@ -16,6 +16,35 @@ model User {
   name String?
   createdAt DateTime @default(now())
   sessions Session[]
+  resumes Resume[]
+  profile Profile?
+}
+model Resume {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName String
+  mimeType String
+  rawText String
+  storageKey String @unique
+  createdAt DateTime @default(now())
+  isPrimary Boolean @default(true)
+  @@index([userId])
+}
+model Profile {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline String
+  summary String
+  skills String[]
+  titles String[]
+  yearsExperience Float?
+  locations String[]
+  seniority String
+  experience Json
+  education Json
+  updatedAt DateTime @updatedAt
 }
 model Session {
   id String @id @default(cuid())
