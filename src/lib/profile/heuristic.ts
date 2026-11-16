@@ -70,6 +70,45 @@ export function detectSkills(text: string) {
     ).test(text),
   );
 }
+function unwrapContacts(text: string) {
+  const boundary =
+    /^(?:summary|profile|skills|experience|education|contact|certifications|projects|notes)$/i;
+  for (let pass = 0; pass < 10; pass++) {
+    const previous = text;
+    text = text.replace(
+      /((?:https?:\/\/|www\.)[^\s<>()|]+|[A-Z0-9._%+-]+@[A-Z0-9.-]*)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._~:/?#=&%+-]+)[ \t]*(?:\r?$|[|]))/gim,
+      (match, left: string, right: string) => {
+        if (boundary.test(right) || /^(?:https?:\/\/|www\.)/i.test(right))
+          return match;
+        const isUrl = /^(?:https?:\/\/|www\.)/i.test(left);
+        const continuation =
+          /[.]/.test(right) ||
+          /[.@/?#=&%-]$/.test(left) ||
+          /^[a-z0-9-]{1,3}$/.test(right) ||
+          (isUrl &&
+            /\/[^/]+$/.test(left.replace(/^https?:\/\//i, '')) &&
+            /^[a-z0-9_-]+$/.test(right));
+        return continuation && (isUrl || /^[A-Z0-9.-]+$/i.test(right))
+          ? left
+          : match;
+      },
+    );
+    text = text.replace(
+      /(^|[|][ \t]*)((?:email[ \t]*:[ \t]*)?[A-Z0-9._%+-]+)[ \t]*\r?\n[ \t]*(?=([A-Z0-9._%+-]*@[A-Z0-9.-]+)[ \t]*(?:\r?$|[|]))/gim,
+      (match, prefix: string, left: string, right: string) => {
+        const local = left.replace(/^email\s*:\s*/i, '');
+        return right.startsWith('@') ||
+          /^email\s*:/i.test(left) ||
+          /[._%+-]/.test(local) ||
+          /^[a-z0-9]{1,3}$/.test(local)
+          ? prefix + left
+          : match;
+      },
+    );
+    if (text === previous) break;
+  }
+  return text;
+}
 export function extractContact(text: string) {
   const phone = [...text.matchAll(/\+?\d[\d ().-]{7,}\d/g)]
     .map((match) => match[0].trim())
@@ -82,11 +121,15 @@ export function extractContact(text: string) {
       );
     });
   return {
-    email: text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null,
+    email:
+      unwrapContacts(text).match(
+        /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+      )?.[0] || null,
     phone: phone || null,
   };
 }
 export function profileContacts(text: string) {
+  text = unwrapContacts(text);
   const contact = extractContact(text);
   const links = [...text.matchAll(/(?:https?:\/\/|www\.)[^\s<>()]+/gi)]
     .map((match) => match[0].replace(/[.,;]+$/, ''))
