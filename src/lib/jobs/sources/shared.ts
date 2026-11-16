@@ -17,14 +17,46 @@ export const date = (value: unknown) =>
     ? new Date(value)
     : null;
 export function plain(value: unknown) {
-  return text(value)
+  const entities: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    nbsp: ' ',
+    quot: '"',
+    apos: "'",
+    ndash: '–',
+    mdash: '—',
+    bull: '•',
+    lsquo: '‘',
+    rsquo: '’',
+    ldquo: '“',
+    rdquo: '”',
+  };
+  let decoded = text(value);
+  for (let pass = 0; pass < 5; pass++) {
+    const next = decoded.replace(
+      /&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,
+      (whole, entity: string) => {
+        if (entity.startsWith('#')) {
+          const point =
+            entity[1].toLowerCase() === 'x'
+              ? parseInt(entity.slice(2), 16)
+              : parseInt(entity.slice(1), 10);
+          return point > 0 &&
+            point <= 0x10ffff &&
+            !(point >= 0xd800 && point <= 0xdfff)
+            ? String.fromCodePoint(point)
+            : '';
+        }
+        return entities[entity.toLowerCase()] ?? whole;
+      },
+    );
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
     .replace(/[ \t]+/g, ' ')
     .trim();
 }
