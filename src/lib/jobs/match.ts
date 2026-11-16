@@ -39,7 +39,7 @@ export function scoreJob(profile: ProfileData, job: NormalizedJob) {
     ? Math.max(0, 1 - Math.abs(seniority(level) - seniority(job.title)) / 3)
     : 0.5;
   const years = job.description.match(
-    /(\d{1,2})\+?\s*(?:years?|yrs?)\s*(?:(?:of|of professional)\s*)?experience/i,
+    /\b(\d{1,2})(?:\s*(?:[-–—]|to)\s*\d{1,2})?\+?\s*(?:years?|yrs?)\s*(?:(?:of|of professional)\s*)?experience/i,
   );
   const yearsFit =
     years && profile.yearsExperience !== null
