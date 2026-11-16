@@ -62,6 +62,14 @@ const skills = [
   'Cybersecurity',
 ];
 const escaped = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function detectSkills(text: string) {
+  return skills.filter((skill) =>
+    new RegExp(
+      `(?:^|[^a-zA-Z0-9])${escaped(skill)}(?=$|[^a-zA-Z0-9+#])`,
+      'i',
+    ).test(text),
+  );
+}
 export function extractContact(text: string) {
   return {
     email: text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null,
@@ -84,12 +92,7 @@ export function heuristicProfile(text: string): ProfileData {
     experience: [],
     education: [],
   };
-  result.skills = skills.filter((skill) =>
-    new RegExp(
-      `(?:^|[^a-zA-Z0-9])${escaped(skill)}(?=$|[^a-zA-Z0-9+#])`,
-      'i',
-    ).test(text),
-  );
+  result.skills = detectSkills(text);
   const years = text.match(
     /(\d{1,2}(?:\.\d)?)\+?\s*years?\s+(?:(?:of|in|of professional)\s+)?experience/i,
   );

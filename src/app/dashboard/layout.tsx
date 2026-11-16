@@ -30,7 +30,13 @@ export default async function DashboardLayout({
           >
             Resume
           </Link>
-          {['Jobs', 'Applications', 'Contacts', 'Settings'].map((name) => (
+          <Link
+            href="/dashboard/jobs"
+            className="block rounded-xl p-3 text-sm font-semibold text-teal-900 hover:bg-teal-50"
+          >
+            Jobs
+          </Link>
+          {['Applications', 'Contacts', 'Settings'].map((name) => (
             <div
               key={name}
               className="flex justify-between p-3 text-sm text-slate-400"

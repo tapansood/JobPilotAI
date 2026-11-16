@@ -4,7 +4,7 @@ A calmer workspace for IT professionals navigating their next career move.
 
 ## Local setup
 
-Requires Node.js 20 LTS, npm, and Docker with Compose.
+Requires Node.js 20.19+ (or a supported newer LTS), npm, and Docker with Compose.
 
 ```sh
 cp .env.example .env
@@ -18,7 +18,7 @@ Open http://localhost:3000. Sign in with email or an E.164 phone number (e.g. +1
 
 ## Current scope
 
-Landing page, email magic-link and phone OTP authentication, persistent sessions, and a protected dashboard. `/dashboard/resume` accepts PDF/DOCX resumes (5 MB maximum), extracts text, builds a profile, and lets you edit the headline, summary, skills, titles, locations, seniority, and years of experience. Jobs, Applications, Contacts, and Settings remain placeholders. Email and phone identities are separate accounts for now.
+Landing page, email magic-link and phone OTP authentication, persistent sessions, and a protected dashboard. `/dashboard/resume` accepts PDF/DOCX resumes (5 MB maximum), extracts text, builds a profile, and lets you edit the headline, summary, skills, titles, locations, seniority, and years of experience. `/dashboard/jobs` aggregates jobs and scores their fit to your profile. Applications, Contacts, and Settings remain placeholders. Email and phone identities are separate accounts for now.
 
 Files are signature-checked, with bounded DOCX archive expansion, then parsed using pdf-parse and Mammoth. Scanned/image-only and password-protected documents are unsupported. Uploading replaces the primary resume and parsed profile, including manual edits; previous uploads remain private on disk. Resume files live in `./uploads` (gitignored and never served publicly). The `FileStorage` interface supports replacing local disk with S3 later. Containers need a persistent writable `/app/uploads` mount owned by the app user. Local storage is not suitable for multi-instance deployment.
 
@@ -35,6 +35,18 @@ See `.env.example` for every application setting:
 - `AI_PROVIDER`: `mock` (default, no credentials required), `openai`, or `anthropic`.
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`: provider credentials and model names. Explicitly selecting a real provider without its key fails rather than silently mocking.
 - `NODE_ENV`: managed by Next.js; production enables secure cookies and disables console delivery.
+- `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `ADZUNA_COUNTRY` (default `us`): optional Adzuna jobs API.
+- `RAPIDAPI_KEY`: optional JSearch API via RapidAPI.
+- `GREENHOUSE_BOARDS`, `LEVER_COMPANIES`: comma-separated public board identifiers (defaults: `stripe,cloudflare` and `netflix`). An empty string disables that board family. The adapters use official public APIs, not scraping.
+- `JOBS_MOCK=true`: include clearly labeled synthetic demo postings alongside live sources. With no configured sources, or when all live sources fail, demo postings are used automatically. For fully offline use, set both board lists empty and leave paid API keys empty.
+
+## Job search and scoring
+
+Create a resume profile first. Search defaults to your first profile title/location; clear location or use broader keywords if a board returns no matches. Greenhouse/Lever apply all query keywords and location substring matching locally and paginate in batches of 50. Adzuna/JSearch use provider pagination. Each request has a 15-second source timeout; individual source failures appear as notices without discarding other sources. Provider coverage and remote eligibility vary; verify the original listing. Greenhouse does not provide a reliable posting date in its public board payload, so that field remains unknown.
+
+Jobs are upserted by source/external ID. Normalized company/title/location fingerprints remove cross-source duplicates from search responses and your match list. Searches add to existing matches and preserve saved/hidden status. The current UI searches page one; APIs accept pages 1–20. Job descriptions are converted to text and rendered as React text, never injected as HTML. Outbound links permit only HTTP(S).
+
+Deterministic scoring uses recognized IT skill overlap (50 points), title keyword Jaccard similarity (25), seniority and explicit years requirement fit (15), and location/remote fit (10). Unknown experience/location earn neutral credit; jobs without recognized skills earn zero skill points. The detail page shows the breakdown. Scores are guidance, not hiring probabilities. Editing your profile affects scoring on your next search, not historical matches. `GET /api/jobs` supports `minScore`, `remote`, `source`, and `saved`; `PATCH /api/jobs/[jobId]` accepts `SAVED`, `HIDDEN`, or null. Hidden matches are excluded from the list. APIs and details are scoped to the current user's matches.
 
 Keep `.env` private. Production requires HTTPS, a correct `APP_URL`, real email/SMS delivery, and a private managed Postgres instance. Local Compose credentials are development-only. Secure production cookies are not sent over plain HTTP.
 
@@ -42,7 +54,7 @@ Keep `.env` private. Production requires HTTPS, a correct `APP_URL`, real email/
 
 Next.js App Router + strict TypeScript + Tailwind. `src/app/api` contains backend route handlers; `src/lib/db.ts` owns Prisma; `src/lib/auth` handles delivery, token hashing, and transactional verification. Postgres 16 stores users, verification challenges, and sessions. Email tokens expire after 15 minutes, SMS codes after 10 minutes and at most five verification attempts. Issuing a new challenge invalidates previous challenges. Sends are limited to one per minute and five per hour per identifier using database transactions. Sessions expire after 30 days and are stored hashed; cookies are httpOnly and SameSite=Lax. Middleware rejects missing cookies and the dashboard server layout validates the actual database session. POST origin validation rejects cross-site browser requests.
 
-`src/lib/ai` exposes `AIProvider.complete({system, prompt, json?})` with mock/OpenAI/Anthropic fetch adapters, used by `src/lib/profile/parse.ts` for schema-validated resume parsing. Planned modules include job feeds, tailoring, outreach drafts, and application tracking. AI output requires user review; no automatic applications or messages.
+`src/lib/ai` exposes `AIProvider.complete({system, prompt, json?})` with mock/OpenAI/Anthropic fetch adapters, used by `src/lib/profile/parse.ts` for schema-validated resume parsing. `src/lib/jobs/sources` holds job adapters and `src/lib/jobs/match.ts` provides pure scoring. Planned modules include tailoring, outreach drafts, and application tracking. AI output requires user review; no automatic applications or messages. Next.js 16 uses `src/proxy.ts` for the cookie-presence gate; Prisma 7 uses `prisma.config.ts` and the Postgres driver adapter.
 
 LinkedIn integration will use official user data exports and user-reviewed drafts, **not scraping, password collection, or automated messaging**.
 

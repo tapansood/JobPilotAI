@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 export default function Login() {
+  const router = useRouter();
   const [type, setType] = useState<'EMAIL' | 'SMS'>('EMAIL');
   const [identifier, setIdentifier] = useState('');
   const [busy, setBusy] = useState(false);
@@ -20,7 +22,7 @@ export default function Login() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       if (type === 'SMS')
-        window.location.assign(
+        router.push(
           `/auth/verify?type=SMS&identifier=${encodeURIComponent(identifier.trim())}`,
         );
       else setSent(true);

@@ -72,7 +72,7 @@ export default function Home() {
           [
             '02 / OPPORTUNITY',
             'Find your direction',
-            'Planned: discover relevant roles and prepare tailored application drafts.',
+            'Discover relevant roles across sources and see how your skills match. Application drafts are coming next.',
           ],
           [
             '03 / MOMENTUM',

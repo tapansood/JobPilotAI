@@ -3,7 +3,6 @@ generator client {
 }
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
 }
 enum VerificationType {
   EMAIL
@@ -18,6 +17,46 @@ model User {
   sessions Session[]
   resumes Resume[]
   profile Profile?
+  jobMatches JobMatch[]
+}
+enum MatchStatus {
+  SAVED
+  HIDDEN
+}
+model Job {
+  id String @id @default(cuid())
+  source String
+  externalId String
+  title String
+  company String
+  location String
+  remote Boolean
+  url String
+  description String
+  salaryMin Float?
+  salaryMax Float?
+  currency String?
+  postedAt DateTime?
+  employmentType String?
+  fingerprint String
+  fetchedAt DateTime @default(now())
+  matches JobMatch[]
+  @@unique([source, externalId])
+  @@index([fingerprint])
+}
+model JobMatch {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId String
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  score Int
+  matchedSkills String[]
+  missingSkills String[]
+  reasons Json
+  status MatchStatus?
+  @@unique([userId, jobId])
+  @@index([userId, score])
 }
 model Resume {
   id String @id @default(cuid())

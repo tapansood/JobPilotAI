@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (!request.cookies.get('jobpilot_session')?.value)
     return NextResponse.redirect(new URL('/login', request.url));
   return NextResponse.next();

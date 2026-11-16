@@ -19,8 +19,8 @@ export default function Dashboard() {
         </h2>
         <p className="max-w-xl text-sm leading-6 text-teal-100/80">
           You’ve taken the first step. Upload your resume to build your profile.
-          Curated roles, application tracking, and outreach drafts are coming
-          next.
+          Explore scored job matches in Jobs. Application tracking and outreach
+          drafts are coming next.
         </p>
       </section>
       <h2 className="mb-5 text-lg font-semibold">Coming to your workspace</h2>
