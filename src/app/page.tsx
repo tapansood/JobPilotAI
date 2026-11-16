@@ -72,12 +72,12 @@ export default function Home() {
           [
             '02 / OPPORTUNITY',
             'Find your direction',
-            'Discover relevant roles across sources and see how your skills match. Application drafts are coming next.',
+            'Discover relevant roles across sources, see how your skills match, and tailor a factual application draft.',
           ],
           [
             '03 / MOMENTUM',
             'Keep moving forward',
-            'Planned: organize applications and write thoughtful outreach to your network.',
+            'Import your contacts and prepare thoughtful outreach you review and send yourself. Application tracking is planned.',
           ],
         ].map(([label, title, text]) => (
           <article key={label}>

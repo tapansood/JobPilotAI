@@ -18,6 +18,10 @@ model User {
   resumes Resume[]
   profile Profile?
   jobMatches JobMatch[]
+  tailoredResumes TailoredResume[]
+  coverLetters CoverLetter[]
+  contacts Contact[]
+  outreachDrafts OutreachDraft[]
 }
 enum MatchStatus {
   SAVED
@@ -41,8 +45,71 @@ model Job {
   fingerprint String
   fetchedAt DateTime @default(now())
   matches JobMatch[]
+  tailoredResumes TailoredResume[]
+  coverLetters CoverLetter[]
+  outreachDrafts OutreachDraft[]
   @@unique([source, externalId])
   @@index([fingerprint])
+}
+model TailoredResume {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId String
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  content Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId, jobId])
+}
+model CoverLetter {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId String
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  body String
+  createdAt DateTime @default(now())
+  @@index([userId, jobId])
+}
+enum ContactSource {
+  LINKEDIN_EXPORT
+  MANUAL
+}
+model Contact {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName String
+  email String?
+  company String
+  position String
+  connectedOn DateTime?
+  source ContactSource
+  linkedinUrl String?
+  identityKey String
+  outreachDrafts OutreachDraft[]
+  @@unique([userId, identityKey])
+  @@index([userId])
+}
+enum OutreachChannel {
+  LINKEDIN
+  EMAIL
+}
+model OutreachDraft {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId String
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  channel OutreachChannel
+  subject String
+  body String
+  createdAt DateTime @default(now())
+  @@index([userId, jobId])
 }
 model JobMatch {
   id String @id @default(cuid())

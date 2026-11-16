@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { currentUser } from '@/lib/auth/service';
 import { db } from '@/lib/db';
 import { plain, safeUrl } from '@/lib/jobs/sources/shared';
+import Preparation from './preparation';
 export default async function JobDetail({
   params,
 }: {
@@ -81,6 +82,7 @@ export default async function JobDetail({
           {plain(job.description)}
         </div>
       </div>
+      <Preparation jobId={job.id} />
     </article>
   );
 }

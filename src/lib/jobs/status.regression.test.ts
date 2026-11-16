@@ -77,3 +77,13 @@ it.each(['HIDDEN', 'SAVED'] as const)(
     });
   },
 );
+it('retains a saved same-source posting when its title or location is refreshed', async () => {
+  m.previous.mockResolvedValue([
+    {
+      status: 'SAVED',
+      jobId: 'new-job',
+      job: { ...job, title: 'Old title', location: 'Seattle' },
+    },
+  ]);
+  expect((await searchForUser('owner', {}))?.matches[0].status).toBe('SAVED');
+});

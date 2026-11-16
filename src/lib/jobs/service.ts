@@ -35,7 +35,7 @@ export async function searchForUser(
     });
     const scoring = scoreJob(profile, item);
     const duplicates = existing.filter(
-      (match) => fingerprint(match.job) === hash,
+      (match) => match.jobId === job.id || fingerprint(match.job) === hash,
     );
     const status = strongestStatus(duplicates.map((match) => match.status));
     const match = await db.jobMatch.upsert({

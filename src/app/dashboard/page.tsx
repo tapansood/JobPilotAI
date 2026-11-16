@@ -19,11 +19,11 @@ export default function Dashboard() {
         </h2>
         <p className="max-w-xl text-sm leading-6 text-teal-100/80">
           You’ve taken the first step. Upload your resume to build your profile.
-          Explore scored job matches in Jobs. Application tracking and outreach
-          drafts are coming next.
+          Explore scored job matches in Jobs, tailor a factual resume, and draft
+          outreach to your contacts. Application tracking is coming next.
         </p>
       </section>
-      <h2 className="mb-5 text-lg font-semibold">Coming to your workspace</h2>
+      <h2 className="mb-5 text-lg font-semibold">Your workspace</h2>
       <div className="grid gap-5 sm:grid-cols-2">
         {[
           [
@@ -49,7 +49,7 @@ export default function Dashboard() {
         ].map(([n, title, text]) => (
           <article className="panel" key={n}>
             <span className="text-xs font-bold text-teal-700">
-              {n} / PLANNED
+              {n} / {n === '03' ? 'PLANNED' : 'AVAILABLE'}
             </span>
             <h3 className="mb-2 mt-4 font-semibold">{title}</h3>
             <p className="text-sm leading-6 text-slate-500">{text}</p>

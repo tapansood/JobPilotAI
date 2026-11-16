@@ -1,4 +1,5 @@
 import { heuristicProfile } from '@/lib/profile/heuristic';
+import { deterministicTailor } from '@/lib/tailor/content';
 export interface CompletionRequest {
   system: string;
   prompt: string;
@@ -9,6 +10,14 @@ export interface AIProvider {
 }
 export const mockProvider: AIProvider = {
   async complete({ system, prompt, json }) {
+    if (system.startsWith('JOBPILOT_TAILOR_V1:')) {
+      const { profile, job } = JSON.parse(prompt);
+      return JSON.stringify(deterministicTailor(profile, job));
+    }
+    if (system.startsWith('JOBPILOT_COVER_V1:')) {
+      const { allowed } = JSON.parse(prompt);
+      return JSON.stringify({ body: allowed });
+    }
     if (system.startsWith('JOBPILOT_PROFILE_V1:'))
       return JSON.stringify(heuristicProfile(prompt));
     return json
