@@ -4,6 +4,38 @@ import { extractResume } from './extract';
 import { deterministicTailor } from '@/lib/tailor/content';
 import { exportPdf } from '@/lib/tailor/export';
 import { profile, job } from '@/lib/tailor/fixtures';
+it('does not absorb a name or prose suffix into a standalone email', () => {
+  expect(profileContacts('Alex Smith-Jones\nalex@example.com')).toMatchObject({
+    fullName: 'Alex Smith-Jones',
+    email: 'alex@example.com',
+  });
+  expect(extractContact('Details: alex.ex\nample@example.com').email).toBe(
+    'ample@example.com',
+  );
+  expect(extractContact('Details: alex.\nample@example.com').email).toBe(
+    'ample@example.com',
+  );
+  expect(extractContact('Details: alex@\nexample\n.com').email).toBe(
+    'alex@example.com',
+  );
+});
+it.each([
+  'EXPERIENCE:',
+  'OVERVIEW',
+  'Education:',
+  'Employment',
+  'WORK_HISTORY',
+])('does not absorb the heading %s into a URL', (heading) => {
+  expect(
+    profileContacts(`https://www.linkedin.com/in/alex-morgan\n${heading}`)
+      .linkedinUrl,
+  ).toBe('https://www.linkedin.com/in/alex-morgan');
+});
+it('keeps lowercase slug and path continuations working', () => {
+  expect(
+    profileContacts('https://alex.example.com/port\nfolio/projects').website,
+  ).toBe('https://alex.example.com/portfolio/projects');
+});
 it.each([
   {
     input: 'alex.ex\nample@example.com',

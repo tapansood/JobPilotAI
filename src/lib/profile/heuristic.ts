@@ -107,14 +107,19 @@ function unwrapContacts(text: string) {
     const originalEnd = end;
     const isUrl = /^(?:https?:\/\/|www\.)/i.test(token);
     if (phoneFragment(token) || boundary.test(token)) continue;
-    const emailLabel = /\bemail[ \t]*:[ \t]*$/i.test(
-      text.slice(text.lastIndexOf('\n', match.index - 1) + 1, match.index),
+    const beforeToken = text.slice(
+      text.lastIndexOf('\n', match.index - 1) + 1,
+      match.index,
     );
+    const emailLabel = /^[ \t]*email[ \t]*:[ \t]*$/i.test(beforeToken);
+    const wholeEmailLine = !beforeToken.trim() || emailLabel;
+    const clearEmailPrefix = token.includes('@') || /[._@-]$/.test(token);
     const localPrefix =
-      token.includes('@') ||
-      /[._%+-]/.test(token) ||
-      /^[a-z0-9]{1,3}$/.test(token) ||
-      emailLabel;
+      (wholeEmailLine || clearEmailPrefix) &&
+      (token.includes('@') ||
+        /[._%+-]/.test(token) ||
+        /^[a-z0-9]{1,3}$/.test(token) ||
+        emailLabel);
     while (token.length <= 1000) {
       const next = text
         .slice(end)
@@ -131,7 +136,13 @@ function unwrapContacts(text: string) {
         break;
       const combined = token + fragment;
       if (isUrl) {
-        if (fragment.includes('@') || !validContact(combined, true)) break;
+        if (
+          fragment.includes('@') ||
+          fragment.endsWith(':') ||
+          /^[A-Z][A-Za-z0-9_-]*$/.test(fragment) ||
+          !validContact(combined, true)
+        )
+          break;
       } else {
         const midEmail =
           !validContact(token, false) ||
@@ -141,6 +152,7 @@ function unwrapContacts(text: string) {
         if (
           !localPrefix ||
           !midEmail ||
+          (!wholeEmailLine && validContact(fragment, false)) ||
           (token.includes('@') && fragment.includes('@')) ||
           !/^[A-Z0-9_%+-][A-Z0-9._%+-]*(?:@[A-Z0-9.-]*)?$/i.test(combined) ||
           combined.includes('..') ||
