@@ -41,15 +41,8 @@ export async function searchForUser(
     const match = await db.jobMatch.upsert({
       where: { userId_jobId: { userId, jobId: job.id } },
       create: { userId, jobId: job.id, ...scoring, status },
-      update: { ...scoring, status },
+      update: scoring,
       include: { job: true },
-    });
-    await db.jobMatch.updateMany({
-      where: {
-        userId,
-        jobId: { in: [job.id, ...duplicates.map((match) => match.jobId)] },
-      },
-      data: { status },
     });
     matches.push(match);
   }

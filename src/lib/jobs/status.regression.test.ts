@@ -71,10 +71,8 @@ it.each(['HIDDEN', 'SAVED'] as const)(
     expect(result?.matches[0].status).toBe(status);
     expect(m.match.mock.calls[0][0].create.status).toBe(status);
     expect(m.previous.mock.calls[0][0].where.userId).toBe('owner');
-    expect(m.update).toHaveBeenCalledWith({
-      where: { userId: 'owner', jobId: { in: ['new-job', 'old-job'] } },
-      data: { status },
-    });
+    expect(m.match.mock.calls[0][0].update).not.toHaveProperty('status');
+    expect(m.update).not.toHaveBeenCalled();
   },
 );
 it('retains a saved same-source posting when its title or location is refreshed', async () => {
@@ -86,4 +84,14 @@ it('retains a saved same-source posting when its title or location is refreshed'
     },
   ]);
   expect((await searchForUser('owner', {}))?.matches[0].status).toBe('SAVED');
+});
+it('never overwrites a status changed after search read its snapshot', async () => {
+  m.previous.mockResolvedValue([{ status: null, jobId: 'new-job', job }]);
+  m.match.mockImplementation(async (args) => ({
+    id: 'existing',
+    job: { ...job, id: 'new-job' },
+    status: 'HIDDEN',
+    ...args.update,
+  }));
+  expect((await searchForUser('owner', {}))?.matches[0].status).toBe('HIDDEN');
 });
