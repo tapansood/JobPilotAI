@@ -137,13 +137,15 @@ export function validateTailored(
     ),
   ];
   const experience = profile.experience.map((original, index) => {
-    const candidate = proposal.experience.find(
-      (entry) =>
-        entry.company === original.company &&
-        entry.title === original.title &&
-        entry.start === original.start &&
-        entry.end === original.end,
-    );
+    const entry = proposal.experience[index];
+    const candidate =
+      entry &&
+      entry.company === original.company &&
+      entry.title === original.title &&
+      entry.start === original.start &&
+      entry.end === original.end
+        ? entry
+        : undefined;
     const allowed = new Set(options.bullets[index].flat());
     return {
       ...original,
