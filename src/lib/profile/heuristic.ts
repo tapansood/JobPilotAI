@@ -71,9 +71,19 @@ export function detectSkills(text: string) {
   );
 }
 export function extractContact(text: string) {
+  const phone = [...text.matchAll(/\+?\d[\d ().-]{7,}\d/g)]
+    .map((match) => match[0].trim())
+    .find((value) => {
+      const digits = value.replace(/\D/g, '').length;
+      return (
+        digits >= 10 &&
+        digits <= 15 &&
+        !/\b(?:19|20)\d{2}\s*[-.]\s*(?:19|20)\d{2}\b/.test(value)
+      );
+    });
   return {
     email: text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || null,
-    phone: text.match(/\+?\d[\d ().-]{7,}\d/)?.[0]?.trim() || null,
+    phone: phone || null,
   };
 }
 export function profileContacts(text: string) {
