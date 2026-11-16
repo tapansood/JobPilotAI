@@ -138,6 +138,11 @@ model Resume {
   @@index([userId])
 }
 model Profile {
+  email String @default("")
+  phone String @default("")
+  linkedinUrl String @default("")
+  website String @default("")
+  location String @default("")
   id String @id @default(cuid())
   userId String @unique
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

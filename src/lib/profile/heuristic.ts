@@ -76,12 +76,41 @@ export function extractContact(text: string) {
     phone: text.match(/\+?\d[\d ().-]{7,}\d/)?.[0]?.trim() || null,
   };
 }
+export function profileContacts(text: string) {
+  const contact = extractContact(text);
+  const links = [...text.matchAll(/(?:https?:\/\/|www\.)[^\s<>()]+/gi)]
+    .map((match) => match[0].replace(/[.,;]+$/, ''))
+    .map((value) => (value.startsWith('www.') ? `https://${value}` : value));
+  const linkedinUrl =
+    links.find((value) => {
+      try {
+        const url = new URL(value);
+        return (
+          /^(www\.)?linkedin\.com$/i.test(url.hostname) &&
+          url.pathname.startsWith('/in/')
+        );
+      } catch {
+        return false;
+      }
+    }) || '';
+  const website = links.find((value) => value !== linkedinUrl) || '';
+  return {
+    email: contact.email || '',
+    phone: contact.phone || '',
+    linkedinUrl,
+    website,
+    location:
+      text.match(/^(?:location|based in|address)\s*:\s*(.+)$/im)?.[1]?.trim() ||
+      '',
+  };
+}
 export function heuristicProfile(text: string): ProfileData {
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
   const result: ProfileData = {
+    ...profileContacts(text),
     headline: '',
     summary: '',
     skills: [],

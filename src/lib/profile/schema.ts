@@ -1,6 +1,20 @@
 import { z } from 'zod';
 const text = z.string().trim().max(500);
+const contactUrl = z
+  .union([
+    z
+      .url()
+      .max(1000)
+      .refine((value) => /^https?:\/\//i.test(value)),
+    z.literal(''),
+  ])
+  .optional();
 export const profileSchema = z.object({
+  email: z.union([z.email(), z.literal('')]).optional(),
+  phone: z.string().trim().max(100).optional(),
+  linkedinUrl: contactUrl,
+  website: contactUrl,
+  location: text.optional(),
   headline: text,
   summary: z.string().trim().max(6000),
   skills: z.array(text.min(1)).max(100),

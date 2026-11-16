@@ -193,6 +193,54 @@ export default function ResumePage() {
         <form onSubmit={save} className="panel">
           <h2 className="mb-6 text-lg font-semibold">Review your profile</h2>
           <fieldset disabled={busy} className="disabled:opacity-60">
+            <h3 className="mb-3 font-semibold">Resume contact details</h3>
+            <p className="mb-4 text-sm text-slate-500">
+              Used only in your resume exports, never to link or change sign-in
+              accounts. Review extracted details and regenerate tailored resumes
+              after updating.
+            </p>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  'email',
+                  'phone',
+                  'linkedinUrl',
+                  'website',
+                  'location',
+                ] as const
+              ).map((key) => (
+                <label key={key} className="text-sm font-semibold">
+                  {
+                    {
+                      email: 'Email',
+                      phone: 'Phone',
+                      linkedinUrl: 'LinkedIn URL',
+                      website: 'Website',
+                      location: 'Contact location',
+                    }[key]
+                  }
+                  <input
+                    className="input"
+                    type={
+                      key === 'email'
+                        ? 'email'
+                        : key === 'website' || key === 'linkedinUrl'
+                          ? 'url'
+                          : key === 'phone'
+                            ? 'tel'
+                            : 'text'
+                    }
+                    maxLength={
+                      key === 'linkedinUrl' || key === 'website' ? 1000 : 500
+                    }
+                    value={profile[key] || ''}
+                    onChange={(event) =>
+                      setProfile({ ...profile, [key]: event.target.value })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
             <label className="mb-5 block text-sm font-semibold">
               Headline
               <input

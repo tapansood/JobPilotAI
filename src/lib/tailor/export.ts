@@ -4,6 +4,15 @@ import type { TailoredContent } from './content';
 function lines(content: TailoredContent) {
   return [
     content.headline,
+    [
+      content.email,
+      content.phone,
+      content.linkedinUrl,
+      content.website,
+      content.location,
+    ]
+      .filter(Boolean)
+      .join(' | '),
     '',
     'SUMMARY',
     content.summary,
