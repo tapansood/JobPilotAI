@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { statuses, type Status } from '@/lib/applications/logic';
+import { changedDates } from '@/lib/applications/dates';
 export type ApplicationRecord = {
   id: string;
   jobId: string | null;
@@ -60,12 +61,7 @@ export default function ApplicationEditor({
       const { appliedAt, nextFollowUpAt, ...text } = form;
       const body = {
         ...text,
-        appliedAt: appliedAt ? `${appliedAt}T00:00:00Z` : null,
-        ...(nextFollowUpAt
-          ? { nextFollowUpAt: `${nextFollowUpAt}T00:00:00Z` }
-          : application?.nextFollowUpAt
-            ? { nextFollowUpAt: null }
-            : {}),
+        ...changedDates({ appliedAt, nextFollowUpAt }, application),
         tailoredResumeId: form.tailoredResumeId || null,
         coverLetterId: form.coverLetterId || null,
       };
