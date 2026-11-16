@@ -17,6 +17,8 @@ npm run dev
 
 Open http://localhost:3000. Sign in with email or an E.164 phone number (e.g. +14155552671). Without delivery credentials, the development server console prints the email link or SMS code. Email links require a confirmation click so mail scanners cannot consume them. Never expose this local development server publicly.
 
+Development and production builds use Webpack. Turbopack produced repeated browser reloads during local runtime verification in this environment.
+
 ## Feature overview
 
 - Passwordless email/SMS sign-in with private, user-scoped data. Email and phone identities remain separate accounts.

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TailoredContent } from '@/lib/tailor/content';
 import { draftFor, applyDraft, type TextDraft } from '@/lib/tailor/draft';
 type Contact = {
@@ -32,10 +32,16 @@ export default function Preparation({ jobId }: { jobId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const initializedJob = useRef<string | null>(null);
+  const [loadedJob, setLoadedJob] = useState<string | null>(null);
+  const loading = loadedJob !== jobId;
   useEffect(() => {
+    if (initializedJob.current === jobId) return;
+    let active = true;
     fetch(`/api/jobs/${jobId}/preparation`)
       .then(async (response) => {
         const data = await response.json();
+        if (!active) return;
         if (!response.ok) throw new Error(data.error);
         setTailored(data.tailored);
         if (data.tailored) setTextDraft(draftFor(data.tailored.content));
@@ -43,7 +49,18 @@ export default function Preparation({ jobId }: { jobId: string }) {
         setContacts(data.contacts);
         setDrafts(data.drafts);
       })
-      .catch((error) => setError(error.message));
+      .catch((error) => {
+        if (active) setError(error.message);
+      })
+      .finally(() => {
+        if (active) {
+          initializedJob.current = jobId;
+          setLoadedJob(jobId);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [jobId]);
   async function action(kind: 'tailor' | 'cover-letter' | 'outreach') {
     setBusy(true);
@@ -118,20 +135,25 @@ export default function Preparation({ jobId }: { jobId: string }) {
       </p>
       <div className="mb-5 flex flex-wrap gap-3">
         <button
-          disabled={busy}
+          disabled={busy || loading}
           className="button"
           onClick={() => action('tailor')}
         >
           {busy ? 'Working…' : 'Tailor resume'}
         </button>
         <button
-          disabled={busy}
+          disabled={busy || loading}
           className="rounded-xl border px-4 py-2 text-sm font-semibold"
           onClick={() => action('cover-letter')}
         >
           Cover letter
         </button>
       </div>
+      {loading && (
+        <p role="status" className="my-4 text-sm text-slate-500">
+          Loading saved preparation…
+        </p>
+      )}
       {error && (
         <p
           role="alert"
@@ -167,7 +189,7 @@ export default function Preparation({ jobId }: { jobId: string }) {
             are rejected. Edit the source profile for other factual corrections,
             then regenerate. Save before downloading.
           </p>
-          <fieldset disabled={busy}>
+          <fieldset disabled={busy || loading}>
             <label className="mb-4 block text-sm font-semibold">
               Headline
               <input
@@ -297,7 +319,7 @@ export default function Preparation({ jobId }: { jobId: string }) {
         )}
         <button
           className="button"
-          disabled={busy}
+          disabled={busy || loading}
           onClick={() => action('outreach')}
         >
           Draft outreach

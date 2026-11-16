@@ -17,17 +17,15 @@ it('keeps non-empty AI contacts including unlabeled location, falling back only 
   };
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockImplementation(() =>
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
-              choices: [{ message: { content: JSON.stringify(profile) } }],
-            }),
-          ),
+    vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(profile) } }],
+          }),
         ),
       ),
+    ),
   );
   expect(await parseProfile(raw)).toMatchObject({
     location: 'Seattle, WA',

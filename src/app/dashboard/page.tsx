@@ -40,7 +40,7 @@ export default async function Dashboard() {
       <p className="my-4 text-slate-500">
         Your profile, opportunities, and next steps in one place.
       </p>
-      <div className="my-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="my-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           ['Profile completeness', `${completeness}%`, '/dashboard/resume'],
           ['Unique visible matches', String(matchCount), '/dashboard/jobs'],
@@ -55,7 +55,7 @@ export default async function Dashboard() {
             '/dashboard/applications',
           ],
         ].map(([label, value, href]) => (
-          <Link key={label} href={href} className="panel">
+          <Link key={label} href={href} className="panel p-4 sm:p-6">
             <p className="text-sm text-slate-500">{label}</p>
             <p className="mt-3 text-3xl font-semibold text-teal-900">{value}</p>
           </Link>
@@ -63,7 +63,7 @@ export default async function Dashboard() {
       </div>
       <section className="panel">
         <h2 className="text-xl font-semibold">Applications by status</h2>
-        <div className="my-5 grid gap-4 sm:grid-cols-3">
+        <div className="my-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {Object.entries(stats.counts).map(([status, count]) => (
             <div key={status} className="rounded-xl bg-slate-50 p-4">
               <p className="text-xs font-semibold text-slate-500">{status}</p>

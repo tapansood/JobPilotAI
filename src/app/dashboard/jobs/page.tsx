@@ -145,6 +145,7 @@ export default function JobsPage() {
             <input
               className="input"
               value={query}
+              disabled={!ready || busy}
               maxLength={200}
               placeholder="Software Engineer"
               onChange={(e) => setQuery(e.target.value)}
@@ -155,6 +156,7 @@ export default function JobsPage() {
             <input
               className="input"
               value={location}
+              disabled={!ready || busy}
               maxLength={200}
               placeholder="City, region, or leave blank"
               onChange={(e) => setLocation(e.target.value)}

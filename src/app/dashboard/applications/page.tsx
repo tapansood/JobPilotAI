@@ -53,7 +53,8 @@ export default function ApplicationsPage() {
       <h1 className="text-3xl font-semibold">Application tracker</h1>
       <p className="my-4 text-sm text-slate-500">
         Move cards using their status dropdown. All controls work with a
-        keyboard. Follow-up dates use UTC; nothing is sent automatically.
+        keyboard. Scroll horizontally to see all six columns. Follow-up dates
+        use UTC; nothing is sent automatically.
       </p>
       {error && (
         <p role="alert" className="my-4 text-red-800">
@@ -77,6 +78,8 @@ export default function ApplicationsPage() {
       ) : (
         <div
           className="flex gap-4 overflow-x-auto pb-6"
+          role="region"
+          tabIndex={0}
           aria-label="Applications by status"
         >
           {statuses.map((status) => {
