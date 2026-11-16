@@ -4,6 +4,7 @@ import { currentUser } from '@/lib/auth/service';
 import { db } from '@/lib/db';
 import { plain, safeUrl } from '@/lib/jobs/sources/shared';
 import Preparation from './preparation';
+import Tracking from './tracking';
 export default async function JobDetail({
   params,
 }: {
@@ -83,6 +84,7 @@ export default async function JobDetail({
         </div>
       </div>
       <Preparation jobId={job.id} />
+      <Tracking jobId={job.id} />
     </article>
   );
 }

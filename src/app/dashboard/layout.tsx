@@ -43,14 +43,13 @@ export default async function DashboardLayout({
             Contacts
           </Link>
           {['Applications', 'Settings'].map((name) => (
-            <div
+            <Link
               key={name}
-              className="flex justify-between p-3 text-sm text-slate-400"
-              aria-disabled="true"
+              href={`/dashboard/${name.toLowerCase()}`}
+              className="block rounded-xl p-3 text-sm font-semibold text-teal-900 hover:bg-teal-50"
             >
               <span>{name}</span>
-              <span className="text-[10px] uppercase">Soon</span>
-            </div>
+            </Link>
           ))}
         </nav>
         <div className="mt-12 border-t pt-5">

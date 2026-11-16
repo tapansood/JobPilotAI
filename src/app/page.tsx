@@ -77,7 +77,7 @@ export default function Home() {
           [
             '03 / MOMENTUM',
             'Keep moving forward',
-            'Import your contacts and prepare thoughtful outreach you review and send yourself. Application tracking is planned.',
+            'Import contacts, prepare thoughtful outreach, and track applications and follow-ups. You review and send everything yourself.',
           ],
         ].map(([label, title, text]) => (
           <article key={label}>

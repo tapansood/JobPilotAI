@@ -101,6 +101,17 @@ export default function JobsPage() {
           match.job.id === jobId ? { ...match, status } : match,
         ),
       );
+      if (status === 'SAVED') {
+        const tracked = await fetch('/api/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId }),
+        });
+        if (!tracked.ok)
+          throw new Error(
+            'Job saved, but application tracking failed. Use Track application on the job detail to retry.',
+          );
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Update failed.');
     }
